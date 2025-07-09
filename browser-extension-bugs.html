@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browser Extension Bug Demo</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .bug, .error, .success {
+      border-left: 4px solid;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+    }
+
+    .bug {
+      background: #fff3cd;
+      border-color: #ffc107;
+    }
+
+    .expected, .actual {
+      font-weight: 600;
+      font-size: 0.9em;
+    }
+
+    .expected {
+      color: #28a745;
+    }
+
+    .actual {
+      color: #dc3545;
+    }
+
+    .error {
+      background: #ffcdcd;
+      border-color: #c10707;
+    }
+
+    .success {
+      background: #cdf3ff;
+      border-color: #07c1ff;
+    }
+
+    form {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+
+    input[name="searchQuery"] {
+      width: 200px;
+      padding: 8px 12px;
+      margin-right: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    /* Base button styling */
+    input[type="submit"], #bug2Link, #resetLink {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+    }
+
+    /* Specific button colors and spacing */
+    input[type="submit"] {
+      background: #007bff;
+      margin-right: 12px;
+    }
+
+    input[type="submit"]:hover {
+      background: #0056b3;
+    }
+
+    #bug2Link {
+      background: #28a745;
+    }
+
+    #bug2Link:hover {
+      background: #1e7e34;
+    }
+
+    #resetLink {
+      background: #6c757d;
+      margin-top: 12px;
+    }
+
+    #resetLink:hover {
+      background: #5a6268;
+    }
+  </style>
+</head>
+<body>
+  <h1>Browser Extension Bug Demo</h1>
+
+  <div hidden id="bugDemoPage">
+    <div class="bug">
+      <strong>Bug #1:</strong> Enter search terms and press Enter.<br>
+      <span class="expected">Expected:</span> Form submits immediately on Enter keypress<br>
+      <span class="actual">Actual:</span> Requires pressing Enter twice
+    </div>
+    <div class="bug">
+      <strong>Bug #2:</strong> Enter search terms and immediately click "Search (Bug 2)."<br>
+      <span class="expected">Expected:</span> Click triggers form submission (link navigation prevented)<br>
+      <span class="actual">Actual:</span> Link navigation occurs instead of form submission
+    </div>
+    <form name="searchForm" method="GET">
+      <input type="hidden" name="page" value="searchResultsPage">
+      <input name="searchQuery" placeholder="Enter search terms">
+      <!-- Most browsers treat an Enter keydown as an implicit submission when a form has a submit button -->
+      <input type="submit" value="🔍">
+      <a id="bug2Link" href="?page=fallbackLinkPage">Search (Bug 2)</a>
+    </form>
+  </div>
+
+  <div hidden id="searchResultsPage">
+    <div class="success">
+      You searched for: <strong id="searchTermOutput"></strong>
+    </div>
+  </div>
+
+  <div hidden id="fallbackLinkPage">
+    <div class="error">
+      <strong>Error:</strong> You should not have reached this page. <small>But, due to the bug, you did.</small>
+    </div>
+  </div>
+
+  <a href="?page=bugDemoPage" id="resetLink">Reset Demo</a>
+
+  <script>
+    // Event handler that showcases Bug #2:
+
+    document.getElementById('bug2Link').onclick = event => {
+      document.forms['searchForm'].submit();
+      return false; // should prevent link navigation
+    }
+
+    // Page navigation logic for the demo ...
+
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get('page') || 'bugDemoPage';
+    const searchQuery = params.get('searchQuery') || '(nothing)';
+
+    if (page === 'bugDemoPage') {
+      document.getElementById('bugDemoPage').hidden = false;
+    }
+    else if (page === 'searchResultsPage') {
+      document.getElementById('searchResultsPage').hidden = false;
+      document.getElementById('searchTermOutput').textContent = searchQuery;
+    }
+    else if (page === 'fallbackLinkPage') {
+      document.getElementById('fallbackLinkPage').hidden = false;
+    }
+  </script>
+</body>
+</html>
