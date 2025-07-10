@@ -30,7 +30,7 @@
       border-color: #ffc107;
     }
 
-    .expected, .actual {
+    .expected, .actual, .note {
       font-weight: 600;
       font-size: 0.9em;
     }
@@ -41,6 +41,10 @@
 
     .actual {
       color: #dc3545;
+    }
+
+    .note {
+      color: #6c757d;
     }
 
     .error {
@@ -118,9 +122,10 @@
       <span class="actual">Actual:</span> Requires pressing Enter twice
     </div>
     <div class="bug">
-      <strong>Bug #2:</strong> Enter search terms and immediately click "Search (Bug 2)."<br>
+      <strong>Bug #2:</strong> Enter search terms and <em>immediately</em> click "Search (Bug 2)."<br>
       <span class="expected">Expected:</span> Click triggers form submission (link navigation prevented)<br>
-      <span class="actual">Actual:</span> Link navigation occurs instead of form submission
+      <span class="actual">Actual:</span> Link navigation occurs instead of form submission<br>
+      <span class="note">Note:</span> This bug is not 100% consistent and may require multiple attempts to observe. 
     </div>
     <form name="searchForm" method="GET">
       <input type="hidden" name="page" value="searchResultsPage">
