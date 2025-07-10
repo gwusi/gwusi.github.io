@@ -125,7 +125,8 @@
       <strong>Bug #2:</strong> Enter search terms and <em>immediately</em> click "Search (Bug 2)."<br>
       <span class="expected">Expected:</span> Click triggers form submission (link navigation prevented)<br>
       <span class="actual">Actual:</span> Link navigation occurs instead of form submission<br>
-      <span class="note">Note:</span> This bug is not 100% consistent and may require many attempts to observe. 
+      <span class="note">Note:</span> This bug is not 100% consistent and may require many attempts to observe.
+      <small>See also this <a href="browser-extension-bug-2.html">minimal Bug #2 demo</a>.</small>
     </div>
     <form name="searchForm" method="GET">
       <input type="hidden" name="page" value="searchResultsPage">
@@ -148,7 +149,9 @@
     </div>
   </div>
 
-  <a href="?page=bugDemoPage" id="resetLink">Reset Demo</a>
+  <div>
+    <a href="?page=bugDemoPage" id="resetLink">Reset Demo</a>
+  </div>
 
   <script>
     // Event handler that showcases Bug #2:
