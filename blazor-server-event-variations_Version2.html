@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blazor Server Event Binding Variations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e8f5e8;
+            border-radius: 3px;
+            border: 1px solid #28a745;
+        }
+        .debug {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .event-type {
+            background-color: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .onchange { background-color: #28a745; }
+        .oninput { background-color: #17a2b8; }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        .pattern-title {
+            background-color: #6c757d;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Blazor Server Event Binding Variations</h1>
+    <p>Testing DLP interference across different Blazor Server event binding patterns:</p>
+    <ul>
+        <li><span class="event-type onchange">onchange</span> - Default Blazor @bind behavior (fires on blur/enter)</li>
+        <li><span class="event-type oninput">oninput</span> - @bind:event="oninput" behavior (fires on every keystroke)</li>
+    </ul>
+
+    <!-- Pattern 1: Hidden Form Submission -->
+    <div class="grid">
+        <!-- Pattern 1A: onchange -->
+        <div class="form-container">
+            <div class="pattern-title">Pattern 1A: Form + onchange</div>
+            <span class="event-type onchange">@bind (default)</span>
+            
+            <form id="blazor-form-1a" method="post" action="#" onsubmit="return handleBlazorSubmit(event, '1a')">
+                <input type="hidden" name="__RequestVerificationToken" value="mock-token-123">
+                <input type="hidden" name="__EVENTTARGET" value="">
+                <input type="hidden" name="__EVENTARGUMENT" value="">
+                <input type="hidden" name="__VIEWSTATE" value="mock-viewstate">
+                
+                <div class="form-group">
+                    <label for="searchTerm1a">Search Term:</label>
+                    <input type="text" id="searchTerm1a" name="SearchModel.Term" value="" 
+                           onchange="updateModel(this, 'term', '1a')">
+                </div>
+                
+                <div class="form-group">
+                    <label for="category1a">Category:</label>
+                    <input type="text" id="category1a" name="SearchModel.Category" value="" 
+                           onchange="updateModel(this, 'category', '1a')">
+                </div>
+                
+                <button type="submit" onclick="triggerSearch('1a')">Search</button>
+            </form>
+            <div id="results-1a" class="results" style="display: none;"></div>
+            <div id="debug-1a" class="debug"></div>
+        </div>
+
+        <!-- Pattern 1B: oninput -->
+        <div class="form-container">
+            <div class="pattern-title">Pattern 1B: Form + oninput</div>
+            <span class="event-type oninput">@bind:event="oninput"</span>
+            
+            <form id="blazor-form-1b" method="post" action="#" onsubmit="return handleBlazorSubmit(event, '1b')">
+                <input type="hidden" name="__RequestVerificationToken" value="mock-token-123">
+                <input type="hidden" name="__EVENTTARGET" value="">
+                <input type="hidden" name="__EVENTARGUMENT" value="">
+                <input type="hidden" name="__VIEWSTATE" value="mock-viewstate">
+                
+                <div class="form-group">
+                    <label for="searchTerm1b">Search Term:</label>
+                    <input type="text" id="searchTerm1b" name="SearchModel.Term" value="" 
+                           oninput="updateModel(this, 'term', '1b')">
+                </div>
+                
+                <div class="form-group">
+                    <label for="category1b">Category:</label>
+                    <input type="text" id="category1b" name="SearchModel.Category" value="" 
+                           oninput="updateModel(this, 'category', '1b')">
+                </div>
+                
+                <button type="submit" onclick="triggerSearch('1b')">Search</button>
+            </form>
+            <div id="results-1b" class="results" style="display: none;"></div>
+            <div id="debug-1b" class="debug"></div>
+        </div>
+    </div>
+
+    <!-- Pattern 2: SignalR-style Async -->
+    <div class="grid">
+        <!-- Pattern 2A: onchange -->
+        <div class="form-container">
+            <div class="pattern-title">Pattern 2A: SignalR + onchange</div>
+            <span class="event-type onchange">@bind (default)</span>
+            
+            <div id="blazor-component-2a">
+                <div class="form-group">
+                    <label for="searchTerm2a">Search Term:</label>
+                    <input type="text" id="searchTerm2a" value="" 
+                           onchange="handleSignalRChange(this, 'term', '2a')">
+                </div>
+                
+                <div class="form-group">
+                    <label for="category2a">Category:</label>
+                    <input type="text" id="category2a" value="" 
+                           onchange="handleSignalRChange(this, 'category', '2a')">
+                </div>
+                
+                <button type="button" onclick="triggerSignalRSearch('2a')">Search</button>
+            </div>
+            <div id="results-2a" class="results" style="display: none;"></div>
+            <div id="debug-2a" class="debug"></div>
+        </div>
+
+        <!-- Pattern 2B: oninput -->
+        <div class="form-container">
+            <div class="pattern-title">Pattern 2B: SignalR + oninput</div>
+            <span class="event-type oninput">@bind:event="oninput"</span>
+            
+            <div id="blazor-component-2b">
+                <div class="form-group">
+                    <label for="searchTerm2b">Search Term:</label>
+                    <input type="text" id="searchTerm2b" value="" 
+                           oninput="handleSignalRInput(this, 'term', '2b')">
+                </div>
+                
+                <div class="form-group">
+                    <label for="category2b">Category:</label>
+                    <input type="text" id="category2b" value="" 
+                           oninput="handleSignalRInput(this, 'category', '2b')">
+                </div>
+                
+                <button type="button" onclick="triggerSignalRSearch('2b')">Search</button>
+            </div>
+            <div id="results-2b" class="results" style="display: none;"></div>
+            <div id="debug-2b" class="debug"></div>
+        </div>
+    </div>
+
+    <!-- Pattern 3: Event Delegation -->
+    <div class="grid">
+        <!-- Pattern 3A: onchange -->
+        <div class="form-container">
+            <div class="pattern-title">Pattern 3A: Delegation + onchange</div>
+            <span class="event-type onchange">@bind (default)</span>
+            
+            <div id="blazor-component-3a" data-blazor-component="SearchComponent" data-event-type="change">
+                <div class="form-group">
+                    <label for="searchTerm3a">Search Term:</label>
+                    <input type="text" id="searchTerm3a" data-bind="SearchModel.Term" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label for="category3a">Category:</label>
+                    <input type="text" id="category3a" data-bind="SearchModel.Category" value="">
+                </div>
+                
+                <button type="button" data-action="search">Search</button>
+            </div>
+            <div id="results-3a" class="results" style="display: none;"></div>
+            <div id="debug-3a" class="debug"></div>
+        </div>
+
+        <!-- Pattern 3B: oninput -->
+        <div class="form-container">
+            <div class="pattern-title">Pattern 3B: Delegation + oninput</div>
+            <span class="event-type oninput">@bind:event="oninput"</span>
+            
+            <div id="blazor-component-3b" data-blazor-component="SearchComponent" data-event-type="input">
+                <div class="form-group">
+                    <label for="searchTerm3b">Search Term:</label>
+                    <input type="text" id="searchTerm3b" data-bind="SearchModel.Term" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label for="category3b">Category:</label>
+                    <input type="text" id="category3b" data-bind="SearchModel.Category" value="">
+                </div>
+                
+                <button type="button" data-action="search">Search</button>
+            </div>
+            <div id="results-3b" class="results" style="display: none;"></div>
+            <div id="debug-3b" class="debug"></div>
+        </div>
+    </div>
+
+    <script>
+        // Simulated model state for each variation
+        let models = {};
+        const variations = ['1a', '1b', '2a', '2b', '3a', '3b'];
+        variations.forEach(v => {
+            models[v] = { term: '', category: '' };
+        });
+
+        // Simulated pending operations (like Blazor's render queue)
+        let pendingOperations = {};
+        variations.forEach(v => {
+            pendingOperations[v] = [];
+        });
+
+        // Debug logging with event type indication
+        function logDebug(version, message, eventType = '') {
+            const debugEl = document.getElementById(`debug-${version}`);
+            const timestamp = new Date().toLocaleTimeString();
+            const eventBadge = eventType ? `<span class="event-type ${eventType}">${eventType}</span> ` : '';
+            debugEl.innerHTML += `<div>[${timestamp}] ${eventBadge}${message}</div>`;
+            debugEl.scrollTop = debugEl.scrollHeight;
+        }
+
+        // Pattern 1: Form handling (both onchange and oninput)
+        function updateModel(input, field, version) {
+            const eventType = input.hasAttribute('onchange') ? 'onchange' : 'oninput';
+            models[version][field] = input.value;
+            logDebug(version, `Model updated: ${field} = "${input.value}"`, eventType);
+            
+            // Simulate Blazor's state synchronization delay
+            setTimeout(() => {
+                if (input.value !== models[version][field]) {
+                    logDebug(version, `⚠️ Model/Input mismatch! Input: "${input.value}", Model: "${models[version][field]}"`, eventType);
+                }
+            }, 10);
+        }
+
+        function handleBlazorSubmit(event, version) {
+            event.preventDefault();
+            logDebug(version, `Form submitted with model: ${JSON.stringify(models[version])}`);
+            performSearch(version);
+            return false;
+        }
+
+        function triggerSearch(version) {
+            setTimeout(() => {
+                logDebug(version, `Search triggered via button click`);
+                const form = document.getElementById(`blazor-form-${version}`);
+                const formData = new FormData(form);
+                const actualData = {
+                    term: formData.get('SearchModel.Term') || '',
+                    category: formData.get('SearchModel.Category') || ''
+                };
+                logDebug(version, `FormData: ${JSON.stringify(actualData)}`);
+                performSearch(version, actualData);
+            }, 5);
+        }
+
+        // Pattern 2A: SignalR onchange handling
+        function handleSignalRChange(input, field, version) {
+            logDebug(version, `SignalR change event: ${field} = "${input.value}"`, 'onchange');
+            models[version][field] = input.value;
+            
+            // Simulate server acknowledgment delay (typical for onchange)
+            setTimeout(() => {
+                sendSignalRMessage(version, 'StateChanged', { [field]: input.value });
+            }, 50);
+        }
+
+        // Pattern 2B: SignalR oninput handling
+        function handleSignalRInput(input, field, version) {
+            // Cancel any pending operation (typical for oninput debouncing)
+            if (pendingOperations[version].length > 0) {
+                pendingOperations[version].forEach(clearTimeout);
+                pendingOperations[version] = [];
+            }
+
+            logDebug(version, `SignalR input event: ${field} = "${input.value}"`, 'oninput');
+
+            // Queue a model update with debouncing (common with oninput)
+            const timeoutId = setTimeout(() => {
+                models[version][field] = input.value;
+                logDebug(version, `SignalR debounced update: ${field} = "${input.value}"`, 'oninput');
+                
+                setTimeout(() => {
+                    sendSignalRMessage(version, 'StateChanged', { [field]: input.value });
+                }, 20);
+            }, 150); // Debounce delay
+            
+            pendingOperations[version].push(timeoutId);
+        }
+
+        function sendSignalRMessage(version, method, data) {
+            logDebug(version, `SignalR message: ${method}(${JSON.stringify(data)})`);
+        }
+
+        function triggerSignalRSearch(version) {
+            logDebug(version, `SignalR search initiated`);
+            sendSignalRMessage(version, 'Search', models[version]);
+            
+            setTimeout(() => {
+                performSearch(version);
+            }, 50);
+        }
+
+        // Pattern 3: Event delegation setup
+        ['3a', '3b'].forEach(version => {
+            const container = document.getElementById(`blazor-component-${version}`);
+            const eventType = container.getAttribute('data-event-type');
+            
+            container.addEventListener(eventType, function(e) {
+                if (e.target.hasAttribute('data-bind')) {
+                    const field = e.target.getAttribute('data-bind').split('.')[1].toLowerCase();
+                    models[version][field] = e.target.value;
+                    logDebug(version, `Event delegation ${eventType}: ${field} = "${e.target.value}"`, `on${eventType}`);
+                }
+            });
+
+            container.addEventListener('click', function(e) {
+                if (e.target.hasAttribute('data-action') && e.target.getAttribute('data-action') === 'search') {
+                    logDebug(version, `Event delegation search clicked`);
+                    performSearch(version);
+                }
+            });
+        });
+
+        // Common search function
+        function performSearch(version, overrideData = null) {
+            const searchData = overrideData || models[version];
+            const resultsEl = document.getElementById(`results-${version}`);
+            
+            logDebug(version, `🔍 Performing search with: ${JSON.stringify(searchData)}`);
+            
+            resultsEl.style.display = 'block';
+            resultsEl.innerHTML = `
+                <h3>Search Results (${version.toUpperCase()})</h3>
+                <p><strong>Search Term:</strong> "${searchData.term}"</p>
+                <p><strong>Category:</strong> "${searchData.category}"</p>
+                <p><strong>Timestamp:</strong> ${new Date().toLocaleTimeString()}</p>
+            `;
+
+            // Bug detection logic
+            const termFilled = document.getElementById(`searchTerm${version}`).value.trim();
+            const categoryFilled = document.getElementById(`category${version}`).value.trim();
+            
+            if (termFilled && categoryFilled) {
+                if (searchData.term && !searchData.category) {
+                    logDebug(version, `🐛 BUG: Both fields filled, but only term was captured!`);
+                    resultsEl.innerHTML += `<div style="color: red; font-weight: bold;">⚠️ BUG: Only first field processed!</div>`;
+                } else if (!searchData.term && searchData.category) {
+                    logDebug(version, `🐛 BUG: Both fields filled, but only category was captured!`);
+                    resultsEl.innerHTML += `<div style="color: red; font-weight: bold;">⚠️ BUG: Only second field processed!</div>`;
+                } else if (!searchData.term && !searchData.category) {
+                    logDebug(version, `🐛 BUG: Both fields filled, but neither was captured!`);
+                    resultsEl.innerHTML += `<div style="color: red; font-weight: bold;">⚠️ BUG: No fields processed!</div>`;
+                } else {
+                    logDebug(version, `✅ SUCCESS: Both fields captured correctly`);
+                    resultsEl.innerHTML += `<div style="color: green; font-weight: bold;">✅ Both fields processed correctly</div>`;
+                }
+            }
+        }
+
+        // Enhanced DLP interference simulation
+        function simulateDLPInterference() {
+            console.log('Simulating DLP interference...');
+            
+            // Method 1: Intercept and delay events differently for input vs change
+            const originalAddEventListener = Element.prototype.addEventListener;
+            Element.prototype.addEventListener = function(type, listener, options) {
+                if (type === 'input') {
+                    const wrappedListener = function(e) {
+                        // Longer delay for input events (more susceptible to interference)
+                        setTimeout(() => {
+                            listener.call(this, e);
+                        }, Math.random() * 200); // 0-200ms delay
+                    };
+                    return originalAddEventListener.call(this, type, wrappedListener, options);
+                } else if (type === 'change') {
+                    const wrappedListener = function(e) {
+                        // Shorter delay for change events
+                        setTimeout(() => {
+                            listener.call(this, e);
+                        }, Math.random() * 50); // 0-50ms delay
+                    };
+                    return originalAddEventListener.call(this, type, wrappedListener, options);
+                }
+                return originalAddEventListener.call(this, type, listener, options);
+            };
+
+            // Method 2: Interfere with form data collection
+            const originalFormData = window.FormData;
+            window.FormData = function(form) {
+                const fd = new originalFormData(form);
+                // Simulate DLP randomly interfering with form data
+                if (Math.random() > 0.6) {
+                    console.log('DLP: Interfering with form data collection...');
+                    const keys = Array.from(fd.keys());
+                    if (keys.length > 1 && Math.random() > 0.5) {
+                        fd.delete(keys[Math.floor(Math.random() * keys.length)]);
+                    }
+                }
+                return fd;
+            };
+        }
+
+        // Initialize debug areas
+        variations.forEach(version => {
+            const eventType = version.endsWith('a') ? 'onchange' : 'oninput';
+            logDebug(version, `Variation ${version} initialized (${eventType} binding)`);
+        });
+
+        // Uncomment to enable DLP interference simulation
+        // simulateDLPInterference();
+    </script>
+</body>
+</html>
