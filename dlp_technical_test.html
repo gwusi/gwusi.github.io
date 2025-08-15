@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DLP Extension Event Interception Issue - Technical Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-case {
+            border-left: 4px solid #007acc;
+            padding-left: 20px;
+            margin: 20px 0;
+        }
+        .critical {
+            border-left-color: #dc3545;
+        }
+        .warning {
+            border-left-color: #ffc107;
+        }
+        input, select, button, textarea {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        .result-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .code {
+            background: #f1f3f4;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        .event-tracker {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 11px;
+            z-index: 1000;
+        }
+        .fp-marker {
+            /* This class will be detected by DLP extension */
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DLP Extension Event Interception Technical Test</h1>
+        <p><strong>Purpose:</strong> This page demonstrates specific event timing issues that occur when the Forcepoint DLP browser extension intercepts form events, causing problems with Blazor Server and ASP.NET Web Forms applications.</p>
+        
+        <div class="code">
+            <strong>Technical Details:</strong><br>
+            • The DLP extension intercepts events via content.js and nw-hooking-content.js<br>
+            • It uses stopImmediatePropagation() and preventDefault() during analysis<br>
+            • Async server communication (D() function) creates race conditions<br>
+            • Events are queued but not properly sequenced on ALLOW response
+        </div>
+    </div>
+
+    <div class="container test-case critical">
+        <h2>Critical Test 1: Blazor Server Form Submission Issue</h2>
+        <p><strong>Scenario:</strong> User types search criteria and immediately clicks Search. The last entered text is not included in the search because the change event is intercepted and delayed.</p>
+        
+        <form id="blazorTestForm" class="fp-marker">
+            <div>
+                <label>Search Criteria (type and immediately click search):</label><br>
+                <input type="text" id="blazorSearchInput" placeholder="Type: sensitive data" data-test="blazor">
+                <button type="button" id="blazorSearchBtn">🔍 Search</button>
+            </div>
+        </form>
+        
+        <div class="result-box" id="blazorResult">
+            <em>Type in the search box and immediately click Search to test...</em>
+        </div>
+        
+        <div class="code">
+            Expected behavior: Search includes the text you just typed<br>
+            Bug behavior: Search happens with empty or previous value<br>
+            Root cause: change event is intercepted by DLP extension's Ve() function
+        </div>
+    </div>
+
+    <div class="container test-case critical">
+        <h2>Critical Test 2: ASP.NET UpdatePanel Cascade Issue</h2>
+        <p><strong>Scenario:</strong> Change first dropdown and immediately click second dropdown. The postback doesn't occur because the change event is still being analyzed by the DLP extension.</p>
+        
+        <form id="updatePanelForm" class="fp-marker">
+            <div>
+                <label>Country (change and immediately click State dropdown):</label><br>
+                <select id="countrySelect" data-test="webforms">
+                    <option value="">Select Country</option>
+                    <option value="US">United States</option>
+                    <option value="CA">Canada</option>
+                    <option value="UK">United Kingdom</option>
+                </select>
+                
+                <select id="stateSelect" data-test="webforms" disabled>
+                    <option value="">Select State/Province</option>
+                </select>
+            </div>
+        </form>
+        
+        <div class="result-box" id="updatePanelResult">
+            <em>Change country and immediately click on the state dropdown...</em>
+        </div>
+        
+        <div class="code">
+            Expected behavior: State dropdown populates after country change<br>
+            Bug behavior: State dropdown remains disabled/empty<br>
+            Root cause: DLP extension blocks change event in Ve() function during analysis
+        </div>
+    </div>
+
+    <div class="container test-case warning">
+        <h2>Test 3: Event Sequence Interference</h2>
+        <p><strong>Scenario:</strong> Rapid user interactions that trigger multiple events in sequence. DLP extension disrupts the natural event flow.</p>
+        
+        <div class="fp-marker">
+            <textarea id="rapidTextArea" rows="4" cols="50" placeholder="Type rapidly, then click outside" data-test="sequence"></textarea><br>
+            <button type="button" id="processBtn">Process Text</button>
+            <button type="button" id="clearBtn">Clear</button>
+        </div>
+        
+        <div class="result-box" id="sequenceResult">
+            <em>Type quickly in the textarea, then immediately click Process Text...</em>
+        </div>
+    </div>
+
+    <div class="container test-case">
+        <h2>Test 4: File Input Interception</h2>
+        <p><strong>Scenario:</strong> File selection followed by immediate form submission. Tests the extension's file handling interference.</p>
+        
+        <form id="fileTestForm" class="fp-marker">
+            <input type="file" id="testFileInput" data-test="file" accept=".txt,.pdf,.doc">
+            <button type="button" id="fileSubmitBtn">Submit File</button>
+        </form>
+        
+        <div class="result-box" id="fileResult">
+            <em>Select a file and immediately click Submit File...</em>
+        </div>
+    </div>
+
+    <!-- Event Tracker Panel -->
+    <div class="event-tracker">
+        <h4>Real-time Event Log</h4>
+        <button type="button" id="clearEventLog" style="font-size: 10px; padding: 5px;">Clear</button>
+        <div id="eventLogContent" style="font-family: monospace; font-size: 10px; max-height: 300px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        // Event logging system
+        const eventLogContent = document.getElementById('eventLogContent');
+        let eventCounter = 0;
+        
+        function logEvent(type, target, details = '') {
+            const timestamp = performance.now().toFixed(2);
+            const entry = `${++eventCounter}. [${timestamp}ms] ${type} on ${target.tagName}#${target.id} ${details}`;
+            
+            const div = document.createElement('div');
+            div.textContent = entry;
+            div.style.marginBottom = '2px';
+            div.style.color = type.includes('BLOCK') ? '#dc3545' : type.includes('DLP') ? '#ffc107' : '#333';
+            
+            eventLogContent.appendChild(div);
+            eventLogContent.scrollTop = eventLogContent.scrollHeight;
+            
+            console.log(entry);
+        }
+        
+        document.getElementById('clearEventLog').addEventListener('click', () => {
+            eventLogContent.innerHTML = '';
+            eventCounter = 0;
+        });
+        
+        // Monitor for DLP extension interference
+        function attachEventMonitors(element, testName) {
+            ['input', 'change', 'blur', 'focus', 'click', 'keydown', 'keyup'].forEach(eventType => {
+                element.addEventListener(eventType, (e) => {
+                    logEvent(eventType.toUpperCase(), e.target, `[${testName}] isTrusted:${e.isTrusted}`);
+                    
+                    // Check if event is being blocked/delayed
+                    const startTime = performance.now();
+                    setTimeout(() => {
+                        const elapsed = performance.now() - startTime;
+                        if (elapsed > 50) { // Unusual delay suggests interference
+                            logEvent('DLP-DELAY', e.target, `[${testName}] ${elapsed.toFixed(2)}ms delay detected`);
+                        }
+                    }, 0);
+                }, true);
+            });
+        }
+        
+        // Test 1: Blazor Server Form Issue
+        const blazorSearchInput = document.getElementById('blazorSearchInput');
+        const blazorSearchBtn = document.getElementById('blazorSearchBtn');
+        const blazorResult = document.getElementById('blazorResult');
+        
+        attachEventMonitors(blazorSearchInput, 'BLAZOR');
+        attachEventMonitors(blazorSearchBtn, 'BLAZOR');
+        
+        let lastBlazorValue = '';
+        let blazorChangeProcessed = false;
+        
+        blazorSearchInput.addEventListener('input', (e) => {
+            lastBlazorValue = e.target.value;
+            blazorChangeProcessed = false;
+        });
+        
+        blazorSearchInput.addEventListener('change', (e) => {
+            logEvent('CHANGE-FIRED', e.target, `[BLAZOR] value="${e.target.value}"`);
+            blazorChangeProcessed = true;
+        });
+        
+        blazorSearchBtn.addEventListener('click', (e) => {
+            const currentValue = blazorSearchInput.value;
+            logEvent('SEARCH-CLICKED', e.target, `[BLAZOR] input="${currentValue}" processed=${blazorChangeProcessed}`);
+            
+            if (!blazorChangeProcessed && currentValue.length > 0) {
+                blazorResult.innerHTML = `<div class="error"><strong>BUG REPRODUCED!</strong><br>
+                    Search executed with incomplete input processing.<br>
+                    Current value: "${currentValue}"<br>
+                    Change event processed: ${blazorChangeProcessed}<br>
+                    <em>This demonstrates the Blazor Server form submission issue.</em></div>`;
+            } else {
+                blazorResult.innerHTML = `<div class="success">Search executed correctly with: "${currentValue}"</div>`;
+            }
+        });
+        
+        // Test 2: ASP.NET UpdatePanel Issue
+        const countrySelect = document.getElementById('countrySelect');
+        const stateSelect = document.getElementById('stateSelect');
+        const updatePanelResult = document.getElementById('updatePanelResult');
+        
+        attachEventMonitors(countrySelect, 'WEBFORMS');
+        attachEventMonitors(stateSelect, 'WEBFORMS');
+        
+        const stateData = {
+            'US': ['California', 'Texas', 'New York', 'Florida'],
+            'CA': ['Ontario', 'Quebec', 'British Columbia', 'Alberta'],
+            'UK': ['England', 'Scotland', 'Wales', 'Northern Ireland']
+        };
+        
+        let countryChangeInProgress = false;
+        let countryChangeTimer = null;
+        
+        countrySelect.addEventListener('change', (e) => {
+            logEvent('COUNTRY-CHANGED', e.target, `[WEBFORMS] value="${e.target.value}"`);
+            countryChangeInProgress = true;
+            
+            if (countryChangeTimer) {
+                clearTimeout(countryChangeTimer);
+            }
+            
+            // Simulate server round-trip delay
+            countryChangeTimer = setTimeout(() => {
+                const selectedCountry = e.target.value;
+                stateSelect.innerHTML = '<option value="">Select State/Province</option>';
+                
+                if (selectedCountry && stateData[selectedCountry]) {
+                    stateSelect.disabled = false;
+                    stateData[selectedCountry].forEach(state => {
+                        const option = document.createElement('option');
+                        option.value = state;
+                        option.textContent = state;
+                        stateSelect.appendChild(option);
+                    });
+                    logEvent('STATES-LOADED', stateSelect, `[WEBFORMS] ${stateData[selectedCountry].length} options`);
+                } else {
+                    stateSelect.disabled = true;
+                }
+                
+                countryChangeInProgress = false;
+                updatePanelResult.innerHTML = `<div class="success">State dropdown updated for: ${selectedCountry}</div>`;
+            }, 300); // Simulate network delay
+        });
+        
+        stateSelect.addEventListener('click', (e) => {
+            logEvent('STATE-CLICKED', e.target, `[WEBFORMS] changeInProgress=${countryChangeInProgress}`);
+            
+            if (countryChangeInProgress) {
+                updatePanelResult.innerHTML = `<div class="error"><strong>BUG REPRODUCED!</strong><br>
+                    State dropdown clicked while country change is still processing.<br>
+                    This demonstrates the ASP.NET UpdatePanel cascade issue.<br>
+                    <em>The DLP extension's event interception prevents proper postback sequencing.</em></div>`;
+            }
+        });
+        
+        // Test 3: Event Sequence Issue
+        const rapidTextArea = document.getElementById('rapidTextArea');
+        const processBtn = document.getElementById('processBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const sequenceResult = document.getElementById('sequenceResult');
+        
+        attachEventMonitors(rapidTextArea, 'SEQUENCE');
+        attachEventMonitors(processBtn, 'SEQUENCE');
+        
+        let lastSequenceUpdate = '';
+        let sequenceEvents = [];
+        
+        rapidTextArea.addEventListener('input', (e) => {
+            lastSequenceUpdate = e.target.value;
+            sequenceEvents.push(`input:${e.target.value.length}chars`);
+        });
+        
+        rapidTextArea.addEventListener('change', (e) => {
+            sequenceEvents.push(`change:${e.target.value.length}chars`);
+        });
+        
+        processBtn.addEventListener('click', (e) => {
+            const currentValue = rapidTextArea.value;
+            sequenceEvents.push(`process:${currentValue.length}chars`);
+            
+            sequenceResult.innerHTML = `<div class="result">
+                <strong>Event Sequence:</strong> ${sequenceEvents.join(' → ')}<br>
+                <strong>Final Value:</strong> "${currentValue}" (${currentValue.length} characters)<br>
+                <strong>Last Update:</strong> "${lastSequenceUpdate}" (${lastSequenceUpdate.length} characters)<br>
+                ${currentValue !== lastSequenceUpdate ? '<span style="color: red;">⚠️ Value mismatch detected!</span>' : '<span style="color: green;">✓ Values match</span>'}
+            </div>`;
+        });
+        
+        clearBtn.addEventListener('click', (e) => {
+            rapidTextArea.value = '';
+            sequenceEvents = [];
+            lastSequenceUpdate = '';
+            sequenceResult.innerHTML = '<em>Cleared. Type rapidly and click Process Text...</em>';
+        });
+        
+        // Test 4: File Input Issue
+        const testFileInput = document.getElementById('testFileInput');
+        const fileSubmitBtn = document.getElementById('fileSubmitBtn');
+        const fileResult = document.getElementById('fileResult');
+        
+        attachEventMonitors(testFileInput, 'FILE');
+        attachEventMonitors(fileSubmitBtn, 'FILE');
+        
+        let fileChangeProcessed = false;
+        
+        testFileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            logEvent('FILE-SELECTED', e.target, `[FILE] ${files.length} file(s)`);
+            fileChangeProcessed = true;
+            
+            setTimeout(() => {
+                fileChangeProcessed = false; // Reset after delay
+            }, 100);
+        });
+        
+        fileSubmitBtn.addEventListener('click', (e) => {
+            const files = testFileInput.files;
+            logEvent('FILE-SUBMIT', e.target, `[FILE] ${files.length} file(s) processed=${fileChangeProcessed}`);
+            
+            if (files.length > 0 && !fileChangeProcessed) {
+                fileResult.innerHTML = `<div class="error"><strong>Potential Issue!</strong><br>
+                    File submit clicked before change event was fully processed.<br>
+                    Selected files: ${files.length}<br>
+                    <em>This may indicate DLP extension interference with file handling.</em></div>`;
+            } else if (files.length > 0) {
+                fileResult.innerHTML = `<div class="success">File submitted correctly: ${files[0].name}</div>`;
+            } else {
+                fileResult.innerHTML = `<div>No file selected.</div>`;
+            }
+        });
+        
+        // Initialize
+        logEvent('INIT', document.body, 'DLP Bug Reproduction Test started');
+        
+        // Add markers that the DLP extension will detect
+        document.querySelectorAll('[data-test]').forEach(element => {
+            element.fpMod = true; // Property that DLP extension checks
+        });
+        
+        // Monitor for extension interference
+        let extensionDetected = false;
+        
+        // Override some prototype methods to detect extension hooks
+        const originalAddEventListener = EventTarget.prototype.addEventListener;
+        EventTarget.prototype.addEventListener = function(type, listener, options) {
+            if (this.tagName && ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(this.tagName)) {
+                logEvent('LISTENER-ADDED', this, `[MONITOR] ${type} listener added`);
+            }
+            return originalAddEventListener.call(this, type, listener, options);
+        };
+        
+        // Check for DLP extension presence
+        setTimeout(() => {
+            if (window.chrome && window.chrome.runtime) {
+                logEvent('EXTENSION-CHECK', document.body, 'Chrome extension API detected');
+                extensionDetected = true;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

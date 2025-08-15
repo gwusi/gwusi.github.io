@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DLP Extension Bug Reproduction Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        input, select, button {
+            margin: 5px;
+            padding: 8px;
+            font-size: 14px;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .blazor-sim {
+            background: #e8f4fd;
+        }
+        .webforms-sim {
+            background: #fff2cc;
+        }
+        .log {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 200px;
+            overflow-y: scroll;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>DLP Extension Event Interception Bug Reproduction</h1>
+    
+    <div class="test-section blazor-sim">
+        <h2>Test 1: Blazor Server Simulation</h2>
+        <p><strong>Expected Issue:</strong> Search criteria entered just before clicking Search button is not included in the filter.</p>
+        
+        <form id="blazorForm">
+            <label for="searchInput">Search Criteria:</label>
+            <input type="text" id="searchInput" name="searchCriteria" placeholder="Enter search term">
+            <button type="button" id="searchBtn">Search</button>
+        </form>
+        
+        <div class="result" id="blazorResult">
+            Search results will appear here...
+        </div>
+    </div>
+    
+    <div class="test-section webforms-sim">
+        <h2>Test 2: ASP.NET Web Forms UpdatePanel Simulation</h2>
+        <p><strong>Expected Issue:</strong> Changing first dropdown and immediately clicking second dropdown doesn't trigger the postback.</p>
+        
+        <form id="webformsForm">
+            <label for="category">Category:</label>
+            <select id="category" name="category">
+                <option value="">Select Category</option>
+                <option value="electronics">Electronics</option>
+                <option value="clothing">Clothing</option>
+                <option value="books">Books</option>
+            </select>
+            
+            <label for="subcategory">Subcategory:</label>
+            <select id="subcategory" name="subcategory" disabled>
+                <option value="">Select Subcategory</option>
+            </select>
+        </form>
+        
+        <div class="result" id="webformsResult">
+            Dynamic content will appear here...
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Event Sequence Timing Test</h2>
+        <p><strong>Purpose:</strong> Demonstrates timing issues with event interception.</p>
+        
+        <input type="text" id="timedInput" placeholder="Type here, then quickly click button">
+        <button type="button" id="timedButton">Quick Click</button>
+        
+        <div class="result" id="timedResult">
+            Event sequence will be logged here...
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Event Log</h2>
+        <button type="button" id="clearLog">Clear Log</button>
+        <div class="log" id="eventLog"></div>
+    </div>
+
+    <script>
+        // Event logging utility
+        const eventLog = document.getElementById('eventLog');
+        let eventSequence = 0;
+        
+        function logEvent(message) {
+            const timestamp = new Date().toISOString().split('T')[1].slice(0, -1);
+            const entry = `[${timestamp}] ${++eventSequence}: ${message}`;
+            eventLog.innerHTML += entry + '\n';
+            eventLog.scrollTop = eventLog.scrollHeight;
+            console.log(entry);
+        }
+        
+        // Clear log functionality
+        document.getElementById('clearLog').addEventListener('click', () => {
+            eventLog.innerHTML = '';
+            eventSequence = 0;
+            logEvent('=== Log cleared ===');
+        });
+        
+        // Test 1: Blazor Server Simulation
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const blazorResult = document.getElementById('blazorResult');
+        
+        // Simulate the critical timing issue
+        searchInput.addEventListener('input', (e) => {
+            logEvent(`Input event: "${e.target.value}"`);
+        });
+        
+        searchInput.addEventListener('change', (e) => {
+            logEvent(`Change event: "${e.target.value}"`);
+        });
+        
+        searchInput.addEventListener('blur', (e) => {
+            logEvent(`Blur event: "${e.target.value}"`);
+        });
+        
+        searchBtn.addEventListener('click', (e) => {
+            logEvent(`Search button clicked`);
+            const searchTerm = searchInput.value;
+            logEvent(`Search executed with term: "${searchTerm}"`);
+            blazorResult.innerHTML = `<strong>Search Results for:</strong> "${searchTerm}"<br>` +
+                                   `<em>If the search term is empty or doesn't match what you typed, the bug is reproduced!</em>`;
+        });
+        
+        // Test 2: ASP.NET Web Forms UpdatePanel Simulation
+        const category = document.getElementById('category');
+        const subcategory = document.getElementById('subcategory');
+        const webformsResult = document.getElementById('webformsResult');
+        
+        const subcategoryOptions = {
+            electronics: ['Phones', 'Laptops', 'Tablets'],
+            clothing: ['Shirts', 'Pants', 'Shoes'],
+            books: ['Fiction', 'Non-Fiction', 'Educational']
+        };
+        
+        let pendingCategoryChange = false;
+        let categoryChangeTimer = null;
+        
+        category.addEventListener('change', (e) => {
+            logEvent(`Category changed to: "${e.target.value}"`);
+            pendingCategoryChange = true;
+            
+            // Clear existing timer
+            if (categoryChangeTimer) {
+                clearTimeout(categoryChangeTimer);
+            }
+            
+            // Simulate the async postback delay that gets interrupted
+            categoryChangeTimer = setTimeout(() => {
+                logEvent(`Category change processing completed`);
+                updateSubcategory(e.target.value);
+                pendingCategoryChange = false;
+            }, 500); // Simulate server round-trip time
+        });
+        
+        subcategory.addEventListener('click', (e) => {
+            logEvent(`Subcategory dropdown clicked`);
+            if (pendingCategoryChange) {
+                logEvent(`BUG: Subcategory clicked while category change is still pending!`);
+                webformsResult.innerHTML = `<strong style="color: red;">BUG REPRODUCED!</strong><br>` +
+                                         `The subcategory dropdown was clicked before the category change was fully processed.<br>` +
+                                         `This simulates the UpdatePanel postback being interrupted.`;
+            }
+        });
+        
+        function updateSubcategory(categoryValue) {
+            subcategory.innerHTML = '<option value="">Select Subcategory</option>';
+            
+            if (categoryValue && subcategoryOptions[categoryValue]) {
+                subcategory.disabled = false;
+                subcategoryOptions[categoryValue].forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.toLowerCase();
+                    optionElement.textContent = option;
+                    subcategory.appendChild(optionElement);
+                });
+                webformsResult.innerHTML = `Subcategory options loaded for: <strong>${categoryValue}</strong>`;
+                logEvent(`Subcategory options updated for: "${categoryValue}"`);
+            } else {
+                subcategory.disabled = true;
+                webformsResult.innerHTML = 'Select a category first';
+            }
+        }
+        
+        // Test 3: Event Sequence Timing Test
+        const timedInput = document.getElementById('timedInput');
+        const timedButton = document.getElementById('timedButton');
+        const timedResult = document.getElementById('timedResult');
+        
+        let inputTimer = null;
+        let lastInputValue = '';
+        
+        timedInput.addEventListener('input', (e) => {
+            lastInputValue = e.target.value;
+            logEvent(`Timed input: "${e.target.value}"`);
+            
+            // Clear existing timer
+            if (inputTimer) {
+                clearTimeout(inputTimer);
+            }
+            
+            // Simulate processing delay
+            inputTimer = setTimeout(() => {
+                logEvent(`Input processing completed for: "${lastInputValue}"`);
+            }, 200);
+        });
+        
+        timedButton.addEventListener('click', (e) => {
+            logEvent(`Quick button clicked`);
+            const currentValue = timedInput.value;
+            
+            if (inputTimer) {
+                logEvent(`BUG: Button clicked while input is still being processed!`);
+                timedResult.innerHTML = `<strong style="color: red;">TIMING BUG DETECTED!</strong><br>` +
+                                      `Current input value: "${currentValue}"<br>` +
+                                      `Last processed value: "${lastInputValue}"<br>` +
+                                      `The button was clicked before input processing completed.`;
+            } else {
+                timedResult.innerHTML = `Button clicked with input: "${currentValue}"`;
+            }
+        });
+        
+        // Initialize log
+        logEvent('=== DLP Bug Reproduction Test Initialized ===');
+        logEvent('Instructions:');
+        logEvent('1. For Blazor test: Type in search box and immediately click Search');
+        logEvent('2. For WebForms test: Change category and immediately click subcategory dropdown');
+        logEvent('3. For timing test: Type quickly then immediately click button');
+        logEvent('4. Watch for BUG messages in results and this log');
+    </script>
+</body>
+</html>
