@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Event Handling Issues Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .demo-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .demo-title {
+            color: #d32f2f;
+            font-size: 24px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #d32f2f;
+            padding-bottom: 10px;
+        }
+        
+        .issue-type {
+            color: #1976d2;
+            font-size: 18px;
+            margin: 15px 0 10px 0;
+            font-weight: bold;
+        }
+        
+        .demo-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .primary-btn {
+            background-color: #1976d2;
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            background-color: #1565c0;
+        }
+        
+        .danger-btn {
+            background-color: #d32f2f;
+            color: white;
+        }
+        
+        .danger-btn:hover {
+            background-color: #c62828;
+        }
+        
+        .success-btn {
+            background-color: #388e3c;
+            color: white;
+        }
+        
+        .success-btn:hover {
+            background-color: #2e7d32;
+        }
+        
+        .warning-btn {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        .warning-btn:hover {
+            background-color: #f57c00;
+        }
+        
+        input, textarea, select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .log-container {
+            background-color: #263238;
+            color: #00e676;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        
+        .timestamp {
+            color: #ffab40;
+        }
+        
+        .event-type {
+            color: #40c4ff;
+        }
+        
+        .error {
+            color: #ff5252;
+        }
+        
+        .warning {
+            color: #ff9800;
+        }
+        
+        .success {
+            color: #4caf50;
+        }
+        
+        .nested-demo {
+            border: 2px solid #e0e0e0;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        
+        .drag-area {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            background-color: #fafafa;
+            transition: all 0.3s;
+        }
+        
+        .drag-area.dragover {
+            border-color: #1976d2;
+            background-color: #e3f2fd;
+        }
+        
+        .timing-display {
+            background-color: #fff3e0;
+            padding: 10px;
+            border-left: 4px solid #ff9800;
+            margin: 10px 0;
+        }
+        
+        .counter {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1976d2;
+            text-align: center;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .rapid-clicks {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .rapid-clicks button {
+            padding: 15px;
+            font-size: 14px;
+        }
+        
+        .dynamic-content {
+            min-height: 100px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background-color: #fafafa;
+        }
+        
+        .focus-trap {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .focus-trap input {
+            flex: 1;
+        }
+        
+        #contextualMenu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 1000;
+        }
+        
+        .explanation {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .code-block {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        @keyframes pulse {
+            0% { background-color: #e3f2fd; }
+            50% { background-color: #bbdefb; }
+            100% { background-color: #e3f2fd; }
+        }
+        
+        .pulsing {
+            animation: pulse 0.5s infinite;
+        }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .metric-card {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+        
+        .metric-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: #d32f2f;">🚨 Extension Event Handling Issues Demo</h1>
+    <p style="text-align: center; font-size: 18px; color: #666;">
+        This page demonstrates critical event handling problems that occur even when NO sensitive data is present
+    </p>
+
+    <!-- Issue 1: Event Blocking and Timing -->
+    <div class="demo-section">
+        <div class="demo-title">⏱️ Issue 1: Event Blocking and Timing Problems</div>
+        
+        <div class="explanation">
+            <strong>Problem:</strong> The extension intercepts ALL events (click, keydown, focus, etc.) and prevents their normal propagation 
+            while waiting for server analysis. This creates race conditions and timing issues in normal web application flows.
+        </div>
+        
+        <div class="issue-type">1.1 Click Event Sequence Disruption</div>
+        <div class="demo-controls">
+            <button id="sequenceTest" class="primary-btn">Test Event Sequence</button>
+            <button id="rapidClick" class="danger-btn">Rapid Click Test</button>
+            <button id="clearLog" class="success-btn">Clear Log</button>
+        </div>
+        
+        <div class="rapid-clicks">
+            <button class="rapid-btn" data-btn="1">Button 1</button>
+            <button class="rapid-btn" data-btn="2">Button 2</button>
+            <button class="rapid-btn" data-btn="3">Button 3</button>
+            <button class="rapid-btn" data-btn="4">Button 4</button>
+            <button class="rapid-btn" data-btn="5">Button 5</button>
+            <button class="rapid-btn" data-btn="6">Button 6</button>
+            <button class="rapid-btn" data-btn="7">Button 7</button>
+            <button class="rapid-btn" data-btn="8">Button 8</button>
+            <button class="rapid-btn" data-btn="9">Button 9</button>
+            <button class="rapid-btn" data-btn="10">Button 10</button>
+        </div>
+        
+        <div class="timing-display">
+            <strong>Expected Behavior:</strong> Immediate event processing<br>
+            <strong>Actual Behavior:</strong> Events blocked, held in array, then artificially re-dispatched
+        </div>
+        
+        <div id="eventLog" class="log-container">
+            <div class="timestamp">[DEMO START]</div> Event sequence monitoring active...
+        </div>
+    </div>
+
+    <!-- Issue 2: Asynchronous Analysis Delays -->
+    <div class="demo-section">
+        <div class="demo-title">⚡ Issue 2: Asynchronous Analysis Delays</div>
+        
+        <div class="explanation">
+            <strong>Problem:</strong> The D() function sends data to server and waits for response, but subsequent events can fire 
+            before analysis completes, causing events to execute out of order.
+        </div>
+        
+        <div class="issue-type">2.1 Form Submission Race Conditions</div>
+        <form id="testForm" class="nested-demo">
+            <div class="form-group">
+                <label for="testInput">Enter any text (no sensitive data needed):</label>
+                <input type="text" id="testInput" placeholder="Type something...">
+            </div>
+            <div class="form-group">
+                <label for="testTextarea">Description:</label>
+                <textarea id="testTextarea" rows="3" placeholder="Enter description..."></textarea>
+            </div>
+            <div class="demo-controls">
+                <button type="submit" class="primary-btn">Submit Form</button>
+                <button type="button" id="doubleSubmit" class="warning-btn">Double Submit Test</button>
+            </div>
+        </form>
+        
+        <div class="issue-type">2.2 Input Event Timing</div>
+        <div class="focus-trap">
+            <input type="text" placeholder="Field 1" class="focus-input">
+            <input type="text" placeholder="Field 2" class="focus-input">
+            <input type="text" placeholder="Field 3" class="focus-input">
+        </div>
+        
+        <div class="issue-type">2.3 ContentEditable Elements (Extension Target)</div>
+        <div class="nested-demo">
+            <div contenteditable="true" style="border: 1px solid #ddd; padding: 10px; min-height: 50px;" placeholder="Type in this contenteditable div...">
+                This is a contenteditable div that the extension specifically monitors
+            </div>
+            <div contenteditable="true" style="border: 1px solid #ddd; padding: 10px; min-height: 50px; margin-top: 10px;">
+                Another contenteditable area - try typing here
+            </div>
+        </div>
+        
+        <div class="performance-metrics">
+            <div class="metric-card">
+                <div class="metric-value" id="eventsBlocked">0</div>
+                <div class="metric-label">Events Blocked</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="averageDelay">0ms</div>
+                <div class="metric-label">Average Delay</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="sequenceErrors">0</div>
+                <div class="metric-label">Sequence Errors</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issue 3: stopImmediatePropagation() Abuse -->
+    <div class="demo-section">
+        <div class="demo-title">🛑 Issue 3: Aggressive Event Propagation Blocking</div>
+        
+        <div class="explanation">
+            <strong>Problem:</strong> The extension uses stopImmediatePropagation() aggressively, which breaks normal event flows 
+            in dynamic web applications, even for non-sensitive interactions.
+        </div>
+        
+        <div class="issue-type">3.1 Nested Event Handling</div>
+        <div class="nested-demo" id="parentContainer">
+            <h4>Parent Container (should receive events)</h4>
+            <div class="nested-demo" id="childContainer">
+                <h5>Child Container (should bubble events)</h5>
+                <button id="bubbleTest" class="primary-btn">Test Event Bubbling</button>
+                <button id="contextBtn" class="success-btn">Right-Click Context Menu</button>
+            </div>
+        </div>
+        
+        <div class="issue-type">3.2 Dynamic Content Interaction</div>
+        <div class="demo-controls">
+            <button id="addContent" class="success-btn">Add Dynamic Content</button>
+            <button id="removeContent" class="danger-btn">Remove Content</button>
+        </div>
+        <div id="dynamicArea" class="dynamic-content">
+            <!-- Dynamic content will be added here -->
+        </div>
+        
+        <div class="issue-type">3.3 Drag and Drop Interference</div>
+        <div class="drag-area" id="dropZone">
+            <strong>Drag files here</strong><br>
+            <small>Even non-sensitive files are blocked during analysis</small>
+        </div>
+        <div id="droppedFiles"></div>
+    </div>
+
+    <!-- Issue 4: Focus and Accessibility Problems -->
+    <div class="demo-section">
+        <div class="demo-title">♿ Issue 4: Focus Management and Accessibility</div>
+        
+        <div class="explanation">
+            <strong>Problem:</strong> Focus events are intercepted and blocked, breaking keyboard navigation and accessibility features.
+        </div>
+        
+        <div class="issue-type">4.1 Focus Sequence Testing</div>
+        <div class="demo-controls">
+            <input type="text" placeholder="Focus 1" tabindex="1">
+            <input type="text" placeholder="Focus 2" tabindex="2">
+            <input type="text" placeholder="Focus 3" tabindex="3">
+            <button tabindex="4" class="primary-btn">Focusable Button</button>
+            <select tabindex="5">
+                <option>Option 1</option>
+                <option>Option 2</option>
+            </select>
+        </div>
+        
+        <div class="issue-type">4.2 Keyboard Navigation</div>
+        <div class="demo-controls">
+            <button id="keyTest" class="primary-btn">Press Keys While Focused</button>
+            <div class="counter" id="keyCounter">Key Presses: 0</div>
+        </div>
+        
+        <div class="issue-type">4.3 Tab Navigation Test</div>
+        <div class="demo-controls">
+            <button id="tabTest1" class="primary-btn" tabindex="6">Tab Stop 1</button>
+            <button id="tabTest2" class="success-btn" tabindex="7">Tab Stop 2</button>
+            <button id="tabTest3" class="warning-btn" tabindex="8">Tab Stop 3</button>
+            <input type="text" placeholder="Tab Stop 4" tabindex="9">
+        </div>
+    </div>
+
+    <!-- Issue 5: Network Request Interception -->
+    <div class="demo-section">
+        <div class="demo-title">🌐 Issue 5: Network Request Blocking</div>
+        
+        <div class="explanation">
+            <strong>Problem:</strong> All XMLHttpRequest, fetch(), and WebSocket connections are intercepted and blocked during analysis,
+            even for non-sensitive API calls.
+        </div>
+        
+        <div class="issue-type">5.1 API Call Testing</div>
+        <div class="demo-controls">
+            <button id="fetchTest" class="primary-btn">Test Fetch API</button>
+            <button id="xhrTest" class="success-btn">Test XMLHttpRequest</button>
+            <button id="websocketTest" class="warning-btn">Test WebSocket</button>
+            <button id="localFetch" class="warning-btn">Test Local Fetch</button>
+        </div>
+        
+        <div class="issue-type">5.2 Form Submission Interception</div>
+        <form id="networkForm" action="#" method="post" class="nested-demo">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <button type="submit" class="primary-btn">Submit (Intercepted)</button>
+        </form>
+    </div>
+
+    <!-- Technical Analysis -->
+    <div class="demo-section">
+        <div class="demo-title">🔍 Technical Analysis</div>
+        
+        <div class="issue-type">Extension Code Analysis</div>
+        <div class="code-block">
+// Extension intercepts ALL events aggressively:
+document.addEventListener("click", ot, !0)     // !0 = capture phase
+document.addEventListener("keydown", gt, !0)   // All keydowns blocked
+document.addEventListener("focus", Ct, !0)     // Focus events intercepted
+document.addEventListener("drop", Re, !0)      // Drag/drop blocked
+
+// Events are held in arrays while analysis occurs:
+l[c.DOMCLICK] = e.target                      // Store clicked element
+e.stopImmediatePropagation()                  // Block ALL event handling
+e.preventDefault()                            // Cancel default behavior
+
+// Analysis function with server roundtrip:
+function D(e) {
+    chrome.runtime.sendMessage({
+        action: "analyze", 
+        data: e
+    }, response => {
+        // Only AFTER server response are events allowed
+    });
+}
+        </div>
+        
+        <div class="explanation">
+            <strong>Impact:</strong> This creates a fundamental disruption to normal web application behavior, 
+            causing timing issues, accessibility problems, and poor user experience even when no sensitive data is involved.
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="contextualMenu">
+        <div>Context Menu Item 1</div>
+        <div>Context Menu Item 2</div>
+        <div>Context Menu Item 3</div>
+    </div>
+
+    <script src="demo.js"></script>
+</body>
+</html>
