@@ -63,8 +63,14 @@
       border-radius: 8px;
       margin-top: 20px;
     }
+    
+    /* Add consistent spacing between forms and bug descriptions */
+    form + .bug {
+      margin-top: 20px;
+    }
 
-    input[name="searchQuery"] {
+    /* Replace the specific bug3-input styling with more general input styling */
+    input[name="searchQuery"], .name-form input[type="text"] {
       width: 200px;
       padding: 8px 12px;
       margin-right: 8px;
@@ -73,7 +79,7 @@
     }
 
     /* Base button styling */
-    input[type="submit"], #bug2Link, #resetLink {
+    input[type="submit"], #bug2Link, #resetLink, #searchBtn {
       padding: 8px 12px;
       border: none;
       border-radius: 4px;
@@ -85,12 +91,12 @@
     }
 
     /* Specific button colors and spacing */
-    input[type="submit"] {
+    input[type="submit"], #searchBtn {
       background: #007bff;
       margin-right: 12px;
     }
 
-    input[type="submit"]:hover {
+    input[type="submit"]:hover, #searchBtn:hover {
       background: #0056b3;
     }
 
@@ -110,6 +116,8 @@
     #resetLink:hover {
       background: #5a6268;
     }
+
+    /* Remove the form div margin-bottom since we don't need it anymore */
   </style>
 </head>
 <body>
@@ -117,23 +125,38 @@
 
   <div hidden id="bugDemoPage">
     <div class="bug">
-      <strong>Bug #1:</strong> Enter search terms and press Enter.<br>
+      <strong>Bug #1:</strong> Enter search terms and press Enter<br>
       <span class="expected">Expected:</span> Form submits immediately on Enter keypress<br>
       <span class="actual">Actual:</span> Requires pressing Enter twice
     </div>
     <div class="bug">
-      <strong>Bug #2:</strong> Enter search terms and <em>immediately</em> click "Search (Bug 2)."<br>
+      <strong>Bug #2:</strong> Enter search terms and <em>immediately</em> click "Search (Bug 2)"<br>
       <span class="expected">Expected:</span> Click triggers form submission (link navigation prevented)<br>
       <span class="actual">Actual:</span> Link navigation occurs instead of form submission<br>
-      <span class="note">Note:</span> This bug is not 100% consistent and may require many attempts to observe.
+      <span class="note">Note:</span> This bug is not 100% consistent and may require many attempts to observe
       <!-- <small>See also this <a href="browser-extension-bug-2.html">minimal Bug #2 demo</a>.</small> -->
     </div>
+    
     <form name="searchForm" method="GET">
       <input type="hidden" name="page" value="searchResultsPage">
       <input name="searchQuery" placeholder="Enter search terms">
       <!-- Most browsers treat an Enter keydown as an implicit submission when a form has a submit button -->
       <input type="submit" value="🔍">
       <a id="bug2Link" href="?page=fallbackLinkPage">Search (Bug 2)</a>
+    </form>
+    
+    <div class="bug">
+      <strong>Bug #3:</strong> Enter values in the fields below and <em>immediately</em> click "Search"<br>
+      <span class="expected">Expected:</span> Current field values should be displayed<br>
+      <span class="actual">Actual:</span> Stale or empty data is displayed instead
+    </div>
+    
+    <!-- Simplified Bug #3 form with fields side by side -->
+    <form class="name-form" onsubmit="return false;">
+      <input id="firstName" type="text" placeholder="First Name">
+      <input id="lastName" type="text" placeholder="Last Name">
+      <button id="searchBtn">Search</button>
+      <p id="output"></p>
     </form>
   </div>
 
@@ -177,6 +200,37 @@
     else if (page === 'fallbackLinkPage') {
       document.getElementById('fallbackLinkPage').hidden = false;
     }
+
+    // Code for Bug #3 demo
+    // We only update our "bound" variables on the 'change' event (i.e. blur),
+    // so if an extension swallows blur/change you'll see stale data here.
+    let firstName = "";
+    let lastName  = "";
+
+    const firstInput = document.getElementById("firstName");
+    const lastInput  = document.getElementById("lastName");
+    const output     = document.getElementById("output");
+
+    // update variables on blur/change
+    firstInput.addEventListener("change", e => {
+      firstName = e.target.value;
+    });
+    lastInput.addEventListener("change", e => {
+      lastName = e.target.value;
+    });
+
+    // clear output if user types more before blur
+    firstInput.addEventListener("input", () => {
+      output.textContent = "";
+    });
+    lastInput.addEventListener("input", () => {
+      output.textContent = "";
+    });
+
+    // clicking "Search" shows whatever values were last flushed by 'change'
+    document.getElementById("searchBtn").addEventListener("click", () => {
+      output.textContent = `FirstName = '${firstName}', LastName = '${lastName}'`;
+    });
   </script>
 </body>
 </html>
