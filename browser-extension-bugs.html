@@ -68,7 +68,7 @@
       margin-top: 20px;
     }
 
-    input[name="searchQuery"], .name-form input[type="text"] {
+    input[name="searchQuery"], input[type="text"] {
       width: 200px;
       padding: 8px 12px;
       margin-right: 8px;
@@ -77,7 +77,7 @@
     }
 
     /* Base button styling */
-    input[type="submit"], #bug2Link, #resetLink, #searchBtn {
+    input[type="submit"], #bug2Link, .resetLink, #searchBtn {
       padding: 8px 12px;
       border: none;
       border-radius: 4px;
@@ -106,13 +106,60 @@
       background: #1e7e34;
     }
 
-    #resetLink {
+    .resetLink {
       background: #6c757d;
       margin-top: 12px;
+      margin-bottom: 12px;
     }
 
-    #resetLink:hover {
+    .resetLink:hover {
       background: #5a6268;
+    }
+
+    /* The letter input styling needs to be specific because of its unique size and centering */
+    .letter-input {
+      font-size: 18px;
+      width: 40px !important;
+      text-align: center;
+    }
+    
+    /* These slider styles could potentially be merged with other form element styles, 
+       but they're specific enough that keeping them separate is reasonable */
+    .slider-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .slider {
+      width: 200px;
+      margin: 0 10px;
+    }
+    
+    .timeout-value {
+      font-weight: bold;
+      min-width: 50px;
+    }
+
+    /* Styling for the file upload dropzone */
+    .file-drop-area {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 25px;
+      text-align: center;
+      transition: all 0.3s;
+      background-color: #f8f9fa;
+      margin-bottom: 15px;
+    }
+    
+    .file-drop-area.highlight {
+      border-color: #007bff;
+      background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    #outlookFileStatus, #minimalFileStatus {
+      margin-top: 10px;
+      min-height: 24px;
     }
   </style>
 </head>
@@ -125,13 +172,14 @@
       <span class="expected">Expected:</span> Form submits immediately on Enter keypress<br>
       <span class="actual">Actual:</span> Requires pressing Enter twice
     </div>
+
     <div class="bug">
       <strong>Bug #2:</strong> Enter search terms and <em>immediately</em> click "Search (Bug 2)"<br>
       <span class="expected">Expected:</span> Click triggers form submission (link navigation prevented)<br>
       <span class="actual">Actual:</span> Link navigation occurs instead of form submission<br>
       <span class="note">Note:</span> This bug is not 100% consistent and may require many attempts to observe
     </div>
-    
+
     <form name="searchForm" method="GET">
       <input type="hidden" name="page" value="searchResultsPage">
       <input name="searchQuery" placeholder="Enter search terms">
@@ -139,18 +187,64 @@
       <input type="submit" value="🔍">
       <a id="bug2Link" href="?page=fallbackLinkPage">Search (Bug 2)</a>
     </form>
+
+    <div class="bug">
+      <strong>Bug #3:</strong> Dragging a message from Outlook onto a file upload target is blocked<br>
+      <span class="expected">Expected:</span> File drop is accepted and processed<br>
+      <span class="actual">Actual:</span> Drop operation is prevented or ignored<br>
+      <span class="note">Note:</span> This affects cross-application drag-and-drop operations from Outlook's message list
+    </div>
+    
+    <form onsubmit="return false;">
+      <div id="outlookDropZone" class="file-drop-area">
+        <p>Drag &amp; drop an Outlook message here</p>
+      </div>
+      <p id="outlookFileStatus">No file dropped</p>
+    </form>
+
+    <div class="bug">
+      <strong>Bug #4:</strong> Drop a file into the zone below<br>
+      <span class="expected">Expected:</span> File is processed slowly but silently, without any popup messages<br>
+      <span class="actual">Actual:</span> Browser extension shows a warning message after 2 seconds<br>
+      <span class="note">Note:</span> File is processed correctly but extension can't detect it (likely by design, not a significant issue)
+    </div>
+    
+    <form onsubmit="return false;">
+      <div id="minimalDropZone" class="file-drop-area">
+        <p>Drop any file here</p>
+      </div>
+      <p id="minimalFileStatus">No file dropped yet</p>
+    </form>
     
     <div class="bug">
-      <strong>Bug #3:</strong> Enter values in the fields below and <em>immediately</em> click "Search"<br>
+      <strong>Bug #5:</strong> Enter values in the fields below and <em>immediately</em> click "Search"<br>
       <span class="expected">Expected:</span> Current field values should be displayed<br>
       <span class="actual">Actual:</span> Stale or empty data is displayed instead
     </div>
     
-    <form class="name-form" onsubmit="return false;">
+    <form onsubmit="return false;">
       <input id="firstName" type="text" placeholder="First Name">
       <input id="lastName" type="text" placeholder="Last Name">
       <button id="searchBtn">Search</button>
       <p id="output"></p>
+    </form>
+    
+    <div class="bug">
+      <strong>Bug #6:</strong> Type a letter and wait a moment<br>
+      <span class="expected">Expected:</span> Message should update with your chosen letter after a configured time<br>
+      <span class="actual">Actual:</span> Error message appears instead<br>
+      <span class="note">Note:</span> Try different timeout values as the bug's occurrence depends on timing
+    </div>
+    
+    <form onsubmit="return false;">
+      <div class="slider-container">
+        <label for="timeoutSlider">Delay:</label>
+        <input type="range" id="timeoutSlider" class="slider" min="500" max="3500" step="500" value="1500">
+        <span id="timeoutDisplay" class="timeout-value">1500ms</span>
+      </div>
+      <label for="letterInput">Chosen Letter:</label>
+      <input id="letterInput" type="text" class="letter-input" maxlength="1" autocomplete="off">
+      <p id="letterOutput">Enter a letter above, then wait a moment</p>
     </form>
   </div>
 
@@ -167,18 +261,124 @@
   </div>
 
   <div>
-    <a href="?page=bugDemoPage" id="resetLink">Reset Demo</a>
+    <a href="?page=bugDemoPage" class="resetLink">Reset Demo</a>
   </div>
 
   <script>
-    // Event handler that showcases Bug #2:
+    // General page navigation logic
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get('page') || 'bugDemoPage';
+    const searchQuery = params.get('searchQuery') || '(nothing)';
 
+    if (page === 'bugDemoPage') {
+      document.getElementById('bugDemoPage').hidden = false;
+    }
+    else if (page === 'searchResultsPage') {
+      document.getElementById('searchResultsPage').hidden = false;
+      document.getElementById('searchTermOutput').textContent = searchQuery;
+    }
+    else if (page === 'fallbackLinkPage') {
+      document.getElementById('fallbackLinkPage').hidden = false;
+    }
+  </script>
+
+  <!-- Bug #1: Double enter -->
+  <script>
+    // No specific JavaScript needed - this bug is demonstrated through form behavior
+  </script>
+
+  <!-- Bug #2: onclick-with-preventDefault-not-honored -->
+  <script>
     document.getElementById('bug2Link').onclick = event => {
       document.forms['searchForm'].submit();
       return false; // should prevent link navigation
     }
+  </script>
 
-        // Code for Bug #3 demo
+  <!-- Bug #3: Outlook file drop blocked -->
+  <script>
+    const outlookDropZone = document.getElementById('outlookDropZone');
+    const outlookFileStatus = document.getElementById('outlookFileStatus');
+    
+    // Drag & drop handlers
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      outlookDropZone.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+      outlookDropZone.addEventListener(eventName, () => {
+        outlookDropZone.classList.add('highlight');
+      });
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+      outlookDropZone.addEventListener(eventName, () => {
+        outlookDropZone.classList.remove('highlight');
+      });
+    });
+    
+    // Handle the dropped files
+    outlookDropZone.addEventListener('drop', e => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      
+      if (files.length > 0) {
+        outlookFileStatus.textContent = `File dropped: ${files[0].name}`;
+      } else {
+        outlookFileStatus.textContent = 'Drop detected but no file data was received';
+      }
+    });
+  </script>
+
+  <!-- Bug #4: File drop without DOM mutation blocked -->
+  <script>
+    const minimalDropZone = document.getElementById('minimalDropZone');
+    const minimalFileStatus = document.getElementById('minimalFileStatus');
+    
+    // Set up drag & drop handlers that intentionally do NOT modify the DOM
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      minimalDropZone.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+      minimalDropZone.addEventListener(eventName, () => {
+        minimalDropZone.classList.add('highlight');
+      });
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+      minimalDropZone.addEventListener(eventName, () => {
+        minimalDropZone.classList.remove('highlight');
+      });
+    });
+    
+    // Handle the dropped files but do NOT update DOM (this triggers the extension bug)
+    minimalDropZone.addEventListener('drop', e => {
+      const files = e.dataTransfer.files;
+      
+      // Process the files silently - store in a variable but don't update the page
+      if (files.length > 0) {
+        // Store the file data but deliberately don't update minimalFileStatus
+        // This simulates apps that handle files without DOM changes
+        window.droppedFile = files[0];
+        console.log('File processed silently:', files[0].name);
+        
+        // Only update status after a delay to show the file was actually processed
+        setTimeout(() => {
+          minimalFileStatus.textContent = `File processed: ${files[0].name}`;
+        }, 3000); // Show after extension's 2s timeout
+      }
+    });
+  </script>
+
+  <!-- Bug #5: Searching by first and last name -->
+  <script>
     // We only update our "bound" variables on the 'change' event (i.e. blur),
     // so if an extension swallows blur/change you'll see stale data here.
     let firstName = "";
@@ -208,25 +408,47 @@
     document.getElementById("searchBtn").addEventListener("click", () => {
       output.textContent = `FirstName = '${firstName}', LastName = '${lastName}'`;
     });
-
-    // Page navigation logic for the demo ...
-
-    const params = new URLSearchParams(window.location.search);
-    const page = params.get('page') || 'bugDemoPage';
-    const searchQuery = params.get('searchQuery') || '(nothing)';
-
-    if (page === 'bugDemoPage') {
-      document.getElementById('bugDemoPage').hidden = false;
-    }
-    else if (page === 'searchResultsPage') {
-      document.getElementById('searchResultsPage').hidden = false;
-      document.getElementById('searchTermOutput').textContent = searchQuery;
-    }
-    else if (page === 'fallbackLinkPage') {
-      document.getElementById('fallbackLinkPage').hidden = false;
-    }
   </script>
-</body>
-</html>
+
+  <!-- Bug #6: Type a letter -->
+  <script>
+    const letterInput = document.getElementById("letterInput");
+    const letterOutput = document.getElementById("letterOutput");
+    const timeoutSlider = document.getElementById("timeoutSlider");
+    const timeoutDisplay = document.getElementById("timeoutDisplay");
+    
+    // Update timeout display when slider changes
+    timeoutSlider.addEventListener("input", function() {
+      timeoutDisplay.textContent = this.value + "ms";
+    });
+    
+    // When user types, schedule a delayed blur - using keyup instead of input
+    letterInput.addEventListener("keyup", function() {
+      const value = this.value;
+      const delay = parseInt(timeoutSlider.value);
+      console.log('[KEYUP] User typed:', value);
+      
+      if (value.length) {
+        setTimeout(() => {
+          console.log('[DELAYED] Starting after ' + delay + 'ms for:', value);
+          letterOutput.textContent = 'If you see this message, something went wrong! (The change event was not triggered properly)';
+          letterInput.blur(); // This should trigger onchange, but might not due to extension interference
+        }, delay);
+      }
+    });
+    
+    // Update on change (should be triggered by blur)
+    letterInput.addEventListener("change", function() {
+      const value = this.value;
+      console.log('[CHANGE] Text field changed to:', value, '; updating message');
+      letterOutput.textContent = value ? `"${value.toUpperCase()}" is the best letter!` : 'Enter a letter above, then wait a moment';
+      console.log('[MESSAGE] Updated message');
+      
+      // Clear the input for the next attempt
+      if (value) {
+        this.value = '';
+      }
+    });
+  </script>
 </body>
 </html>
