@@ -412,6 +412,14 @@
 
   <!-- Bug #6: Type a letter -->
   <script>
+  	// Explanation: This is a highly simplified scenario of the real-world behavior where we observed the bug.
+	// In real life, we had a text input with:
+	// - a keyup listener, triggering a delayed autocomplete functionality, and
+	// - an onchange listener, triggering an update elsewhere in the form.
+	// In some cases, the onchange listener was getting squashed. It seems to be highly timing dependent, and may or may not be related to having multiple event listeners.
+	// For the purposes of this demo, instead of requiring you to click away (blur -> onchange) at a certain time, 
+	// we are doing it programatically based on the delay chosen in the demo UI.
+  
     const letterInput = document.getElementById("letterInput");
     const letterOutput = document.getElementById("letterOutput");
     const timeoutSlider = document.getElementById("timeoutSlider");
