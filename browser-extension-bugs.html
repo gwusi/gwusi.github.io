@@ -192,12 +192,12 @@
       <strong>Bug #3:</strong> Dragging a message from Outlook onto a file upload target is blocked<br>
       <span class="expected">Expected:</span> File drop is accepted and processed<br>
       <span class="actual">Actual:</span> Drop operation is prevented or ignored<br>
-      <span class="note">Note:</span> This affects cross-application drag-and-drop operations from Outlook's message list
+      <span class="note">Note:</span> This affects certain cross-application drag-and-drop operations, such as from Outlook's message list or from compressed folders
     </div>
     
     <form onsubmit="return false;">
       <div id="outlookDropZone" class="file-drop-area">
-        <p>Drag &amp; drop an Outlook message here</p>
+        <p>Drag &amp; drop an Outlook message here<br><i>-or-</i><br>Drop a file from a ZIP folder here</p>
       </div>
       <p id="outlookFileStatus">No file dropped</p>
     </form>
